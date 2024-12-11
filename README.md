@@ -83,24 +83,3 @@ pre-commit run --all-files
 
 ### **Step 5: Commit Changes**
 Once the hooks are installed, every `git commit` will automatically run Flake8 checks on staged files. If any violations are found, the commit will fail, and you'll need to fix the issues before committing again.
-
----
-
-### Troubleshooting
-- If you encounter issues with the configuration, ensure the `.pre-commit-config.yaml` and `.flake8` files are present in the root directory of your project.
-- Check the pre-commit log at `~/.cache/pre-commit/pre-commit.log` for detailed error messages.
-
----
-
-### Example
-To check your setup, perform the following steps:
-1. Modify a Python file (e.g., `recherche.py`) and introduce a coding style error (e.g., a line longer than 88 characters).
-2. Stage the file:
-   ```bash
-   git add recherche.py
-   ```
-3. Commit the file:
-   ```bash
-   git commit -m "Test pre-commit hook"
-   ```
-   If the hook detects a violation, the commit will fail, and you'll see the Flake8 error message.
