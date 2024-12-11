@@ -22,28 +22,26 @@ query = "SELECT Name, Legendary FROM table_excel WHERE Name = ?"
 result = pd.read_sql_query(query, conn, params=(name, ))
 print(result)
 conn.close()'''
-# ce programme cherche à trouver toute les solutions possibles à n'importe quelle case de pokédoku
-# ce jeu se présente comme une grille de 3x3 dans laquelle chaque ligne
-# et chaque colonne a une condition sur quel pokémon mettre
-# pour celà il utilise une database qui contiens toutes les informations demandable par pokédoku
-# Collones : #  Name Type1 Type2 Generation Legendary Baby Fossil Mythical
-# Paradox Starter Ultra-Beast Mega Gmax Evolution Branched Friendship Item Trade Region
-# Intimidate Keen_Eye Levitate Sturdy Swift_Swim Close_Combat Crunch Dazzling_Gleam Earthquake
-# Flamethrower Fly Hydro_Pump Ice_Beam Psychic Razor_Leaf Shadow_Ball Thunderbolt
-
-
-def perform_query(query, table):
-    try:
-        logger.info(f"Executing query: {query} on the table")
-        result = pd.read_sql_query(query, table)
-        logger.debug(f"Query result: {result}")
-        return result
-    except Exception as e:
-        logger.error(f"Query failed: {e}", exc_info=True)
-        raise
 
 
 def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid=False):
+    """
+    This program aims to find all possible solutions for any square in a Pokédoku puzzle.
+    The game is presented as a 3x3 grid, where each row and column has a condition for which Pokémon can be placed.
+    To achieve this, it uses a database containing all the information required for Pokédoku.
+    Columns:
+    #, Name, Type1, Type2, Generation, Legendary, Baby, Fossil, Mythical, Paradox,
+    Starter, Ultra-Beast, Mega, Gmax, Evolution, Branched, Friendship, Item,
+    Trade, Region, Intimidate, Keen_Eye, Levitate, Sturdy, Swift_Swim, Close_Combat,
+    Crunch, Dazzling_Gleam, Earthquake, Flamethrower, Fly, Hydro_Pump, Ice_Beam,
+    Psychic, Razor_Leaf, Shadow_Ball, Thunderbolt
+    List of queries, note that the program will not check if the parameter of
+    the query is valid, this is voluntary to add more modularity to the database
+    Type+param : searches for the pokemons of the given param type
+        exceptions : Mono searches for it has only one type and Dual for
+        the ones that have two
+    
+    """
     #  Charger les données Excel
     df = pd.read_excel("database.xlsx", sheet_name="pokemon")
 
@@ -69,9 +67,6 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                     query = query + f"(Type1={param} OR Type2={param}) AND "
             elif (condition_colonne.startswith("Bool")):
                 param = condition_colonne[4:]
-                if param not in conn.columns:
-                    logger.error(f"The column {param} is not part of the database")
-                    return 1
                 query = query + f"{param}=1 AND "
             elif (condition_colonne.startswith("Region")):
                 param = "'"+condition_colonne[6:]+"'"
@@ -93,9 +88,6 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                     query = query + f"(Type1={param} OR Type2={param})"
             elif (condition_ligne.startswith("Bool")):
                 param = condition_ligne[4:]
-                if param not in conn.columns:
-                    logger.error(f"The column {param} is not part of the database")
-                    return 1
                 query = query + f"{param}=1"
             elif (condition_ligne.startswith("Region")):
                 param = "'"+condition_ligne[6:]+"'"
@@ -107,12 +99,14 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                 print(f"erreur, {condition_ligne} argument invalide")
                 return 1
             print("Condition :", condition_colonne, "+", condition_ligne)
-            result = perform_query(query, conn)
+            result = pd.read_sql_query(query, conn)
+            if (result.empty):
+                logger.error("Query returned none", exc_info=True)
 
             # Filtre les résultats pour afficher en priorité ceux qui ne sont pas dans le pokédex
             if 'Pokedex' in result.columns:
-                if (result['Pokedex'] is False).any():
-                    filtered_result = result[result['Pokedex'] is False].copy()
+                if (result['Pokedex'] == False).any():
+                    filtered_result = result[result['Pokedex'] == False].copy()
                     filtered_result['Priority'] = (filtered_result['Region'] == 'Unova').astype(int)
                     prioritized_result = filtered_result.sort_values(by='Priority', ascending=False)
                 else:
@@ -148,4 +142,4 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
     return 0
 
 # Exemple d'appel :
-# recherche(["BoolItem", "RegionAlola", "RegionPaldea"], ["TypeMono", "TypePoison", "TypeNormal"], Grid=True)
+recherche(["TypePsychic", "TypeMono", "BoolStarter"], ["RegionSinnoh", "TypeFire", "RegionUnova"], Grid=True)
