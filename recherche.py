@@ -1,5 +1,12 @@
 import sqlite3
 import pandas as pd
+import logging
+logging.basicConfig(
+    filename='application.log',
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 '''#  Charger les données Excel
@@ -23,6 +30,17 @@ conn.close()'''
 # Paradox Starter Ultra-Beast Mega Gmax Evolution Branched Friendship Item Trade Region
 # Intimidate Keen_Eye Levitate Sturdy Swift_Swim Close_Combat Crunch Dazzling_Gleam Earthquake
 # Flamethrower Fly Hydro_Pump Ice_Beam Psychic Razor_Leaf Shadow_Ball Thunderbolt
+
+
+def perform_query(query, table):
+    try:
+        logger.info(f"Executing query: {query} on the table")
+        result = pd.read_sql_query(query, table)
+        logger.debug(f"Query result: {result}")
+        return result
+    except Exception as e:
+        logger.error(f"Query failed: {e}", exc_info=True)
+        raise
 
 
 def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid=False):
@@ -51,6 +69,9 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                     query = query + f"(Type1={param} OR Type2={param}) AND "
             elif (condition_colonne.startswith("Bool")):
                 param = condition_colonne[4:]
+                if param not in conn.columns:
+                    logger.error(f"The column {param} is not part of the database")
+                    return 1
                 query = query + f"{param}=1 AND "
             elif (condition_colonne.startswith("Region")):
                 param = "'"+condition_colonne[6:]+"'"
@@ -72,6 +93,9 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                     query = query + f"(Type1={param} OR Type2={param})"
             elif (condition_ligne.startswith("Bool")):
                 param = condition_ligne[4:]
+                if param not in conn.columns:
+                    logger.error(f"The column {param} is not part of the database")
+                    return 1
                 query = query + f"{param}=1"
             elif (condition_ligne.startswith("Region")):
                 param = "'"+condition_ligne[6:]+"'"
@@ -83,7 +107,7 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                 print(f"erreur, {condition_ligne} argument invalide")
                 return 1
             print("Condition :", condition_colonne, "+", condition_ligne)
-            result = pd.read_sql_query(query, conn)
+            result = perform_query(query, conn)
 
             # Filtre les résultats pour afficher en priorité ceux qui ne sont pas dans le pokédex
             if 'Pokedex' in result.columns:
