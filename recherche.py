@@ -50,6 +50,7 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
     df.to_sql("table_excel", conn, index=False, if_exists="replace")
     i = -1
     grid = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+    no_result=False
     for condition_colonne in conditions_colonne:
         i += 1
         j = -1
@@ -100,8 +101,11 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
                 return 1
             print("Condition :", condition_colonne, "+", condition_ligne)
             result = pd.read_sql_query(query, conn)
-            if (result.empty):
-                logger.error("Query returned none", exc_info=True)
+            if result.empty:
+                print(f"No results found for the query:{query}")
+                logger.error(f"{query} returned none", exc_info=True)
+                no_result=True
+                continue
 
             # Filtre les résultats pour afficher en priorité ceux qui ne sont pas dans le pokédex
             if 'Pokedex' in result.columns:
@@ -137,9 +141,12 @@ def recherche(conditions_colonne=["TypeNormal"], conditions_ligne=["Mono"], Grid
     if Grid:
         print("\nGrid:")
         for row in grid:
-            print("\t".join(row))
+            print("\t".join(map(str, row)))
     conn.close()
-    return 0
+    if(no_result):
+        return 1
+    else:
+        return 0
 
 # Exemple d'appel :
 recherche(["TypePsychic", "TypeMono", "BoolStarter"], ["RegionSinnoh", "TypeFire", "RegionUnova"], Grid=True)
