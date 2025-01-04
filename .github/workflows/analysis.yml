@@ -1,0 +1,9 @@
+- name: Install flake8 and detect-secrets
+  run: |
+    pip install flake8 detect-secrets
+
+- name: Run code style checks
+  run: flake8 .
+
+- name: Scan for secrets
+  run: detect-secrets scan
