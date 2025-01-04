@@ -1,5 +1,5 @@
 import pytest
-from your_script import recherche
+from recherche.py import recherche
 
 def test_recherche_valid_conditions():
     result = recherche(["BoolItem"], ["TypeMono"], Grid=True)
