@@ -27,18 +27,23 @@ jobs:
         run: pytest
 
       - name: Generate changelog
-        uses: janheinrichmerker/action-github-changelog-generator@v2.3
+        uses: github-changelog-generator/github-changelog-generator@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Create Release
+        id: create_release
+        uses: comnoco/create-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
           tag_name: ${{ github.ref }}
-          name: Release ${{ github.ref }}
-          body_path: CHANGELOG.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          release_name: Release ${{ github.ref }}
+          body: CHANGELOG.md
+          draft: false
+          prerelease: false
 
       - name: Build artifact
         run: python setup.py sdist bdist_wheel
