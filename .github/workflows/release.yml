@@ -20,29 +20,31 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install -r requirements-3.9.txt
 
       - name: Run tests
         run: pytest
 
       - name: Generate changelog
-        run: |
-          git fetch --tags
-          last_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo $(git rev-list --max-parents=0 HEAD))
-          git log $last_tag..HEAD --pretty=format:"%h - %s (%an)" > CHANGELOG.md
+        uses: github-changelog-generator/github-changelog-generator@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          name: Release ${{ github.ref }}
+          body_path: CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build artifact
         run: python setup.py sdist bdist_wheel
 
-      - name: Upload release to GitHub
-        uses: ncipollo/release-action@v1
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          artifacts: "dist/*"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            See the changelog for details:
-            ```markdown
-            $(cat CHANGELOG.md)
-            ```
+          name: build-artifacts
+          path: .github/artifacts
